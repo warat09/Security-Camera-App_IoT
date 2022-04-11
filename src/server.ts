@@ -5,6 +5,7 @@ import mongoose  from 'mongoose';
 import Logging from './library/Logging';
 import Upload_IMG from './routes/Camera_IMG'
 import Setup_Camera from './routes/Camera'
+import Register from "./routes/User";
 const router = express();
 
 mongoose.connect(config.mongo.url,{retryWrites:true,w:"majority"})
@@ -47,7 +48,7 @@ const StartServer = () =>
 
     router.use('/IMG',Upload_IMG);
     router.use('/Camera',Setup_Camera);
-
+    router.use("/User", Register);
 
 
 

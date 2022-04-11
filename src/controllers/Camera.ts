@@ -1,15 +1,20 @@
 import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
+import Camara_IMG from "../models/Camara_IMG";
 import Camera from "../models/Camera";
-
+import MqttHandler from "../MQTT/Connect"
+var MqttClient = new MqttHandler();
+MqttClient.connect();
 const setupCamera =  (req: Request, res: Response, next: NextFunction) => 
 {
     const Frist_register = new Camera({
-        Camera_ID : req.params.Name,
-        Camera_Owner:"",
-        Camera_Name:"",
-        Camera_Ready:false,
-        Camera_Sensor:false
+      Camera_ID: req.params.Name,
+      Camera_Owner: "",
+      Camera_Name: "",
+      Camera_Ready: false,
+      Camera_Sensor: false,
+      Camera_IP: "",
+      Camera_MQTT: "channels/1691393/publish/fields/field"+req.params.Name.toString()[(req.params.Name.toString().length)-1],
     });
     const want_create = {
         Camera_ID : req.params.Name
@@ -22,14 +27,50 @@ const readCameraData = (req: Request, res: Response, next: NextFunction) =>
     const want_data = {
         Camera_ID: req.params.Name,
     };
-    return Camera.findOne(want_data).then((camera)=>res.status(201).json({camera})).catch((error)=>res.status(500).json({error}));
+    return Camera.findOne(want_data).then((camera)=>res.status(200).json({camera})).catch((error)=>res.status(500).json({error}));
 }
 const readCameraDataByOwner = (req: Request, res: Response, next: NextFunction) =>
 {
     const want_data = {
         Camera_Owner: req.params.Owner,
     };
-    return Camera.findOne(want_data).then((camera)=>res.status(201).json({camera})).catch((error)=>res.status(500).json({error}));
+    const resetdata = {
+        Camera_Ready: false,
+        Camera_Sensor: false,
+    };
+    Camera.find(want_data).then((camera) => {
+        if (camera) {
+            camera.forEach((cam) => {
+               cam.set(resetdata);
+               cam.save();
+               MqttClient.sendMessage(cam.Camera_MQTT, "CameraReady");
+            });
+        }
+    });
+    // return Camera.find(want_data).then((camera) => {
+    //     if (camera) {
+    //         setTimeout(() => {
+    //            res.status(201).json({camera});
+    //         }, 2000);
+    //     } 
+    //     else {
+    //         res.status(404).json({ message: "Not found!!" });
+    //     }
+    // });
+    return setTimeout(() => {
+        Camera.find(want_data).then((camera)=>
+        {
+            if(camera)
+            {
+                res.status(200).json({ camera });
+            }
+            else
+            {
+                res.status(404).json({ message: "Not found!!" });
+            }
+        })
+    }, 2000);
+    // return Camera.find(want_data).then((camera)=>res.status(200).json({camera})).catch((error)=>res.status(500).json({error}));
 }
 const setupCameraSensor = (req: Request, res: Response, next: NextFunction) =>
 {
@@ -76,8 +117,15 @@ const setupOwner = (req: Request, res: Response, next: NextFunction) =>
     {
         if(camera)
         {
-            camera.set(data);
-            return camera.save().then((camera) => res.status(201).json({ camera })).catch((error) => res.status(500).json({ error }));
+            if(camera.Camera_Owner==="")
+            {
+                camera.set(data);
+                return camera.save().then((camera) => res.status(201).json({ camera })).catch((error) => res.status(500).json({ error }));
+            }
+            else
+            {
+                res.status(404).json({ message: "Not found!!" });
+            }
         }
         else
         {
@@ -114,11 +162,9 @@ const resetCameraStatus = (req: Request, res: Response, next: NextFunction) =>
         if (camera) {
             camera.forEach(cam=>{
                 cam.set(resetdata);
-                return cam
-                  .save()
-                  .then((camera) => res.status(201).json({ camera }))
-                  .catch((error) => res.status(500).json({ error }));
+                return cam.save()
             })
+            res.status(201).json({camera})
         }
         else
         {
@@ -131,6 +177,10 @@ const resetCamera = (req: Request, res: Response, next: NextFunction) =>
     const want_reset = {
         Camera_ID: req.params.Name,
     };
+    Camara_IMG.deleteMany(want_reset).then((IMG_DATA)=>
+    {
+        console.log(IMG_DATA);
+    })
     return Camera.deleteMany(want_reset).then((IMG_DATA)=>(IMG_DATA ? res.status(201).json({IMG_DATA}):res.status(404).json({message:'Not found!!!'}))).catch((error)=>res.status(500).json({error}))
 }
 export default {

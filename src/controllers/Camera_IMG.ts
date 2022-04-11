@@ -8,19 +8,25 @@ const uploadIMG = (req: Request, res: Response, next: NextFunction) => {
     let date = ("0" + ALL_date.getDate()).slice(-2);
     let month = ("0" + (ALL_date.getMonth() + 1)).slice(-2);
     let year = ALL_date.getFullYear();
-    let hours = ALL_date.getHours();
-    let minutes = ALL_date.getMinutes();
-    let seconds = ALL_date.getSeconds();
+    let hours = (ALL_date.getHours()<10?'0':'') + ALL_date.getHours() ;
+    let minutes = (ALL_date.getMinutes() < 10 ? "0" : "") + ALL_date.getMinutes();
+    let seconds = (ALL_date.getSeconds() < 10 ? "0" : "") + ALL_date.getSeconds();
     const camera_ID = new Camera_IMG(
         {
-            Date_Time:year + "-" + month + "-" + date + "/" + hours + ":" + minutes + ":" + seconds,
+            Date_Time:year + "-" + month + "-" + date + "|" + hours + ":" + minutes + ":" + seconds,
             Camera_ID:cameraname,
             Img:img
         });
 
     return camera_ID.save().then((IMG)=>res.status(201).json({IMG})).catch((error)=>res.status(500).json({error}))
 };
-
+const readByID = (req: Request, res: Response, next: NextFunction) => {
+    const want_data = {
+        Camera_ID:req.params.Name
+    }
+    return Camera_IMG.find(want_data).then((IMG_DATA)=>{(IMG_DATA ? res.status(201).json({IMG_DATA}) : res.status(404).json({message: 'Not found!!'}))})
+    .catch((error)=>res.status(500).json({error}));
+}
 const readALLIMG = (req: Request, res: Response, next: NextFunction) => {
     return Camera_IMG.find().then((IMG)=>res.status(201).json({IMG})).catch((error)=>res.status(500).json({error}));
 }
@@ -47,4 +53,5 @@ const deleteALLIMG = (req: Request, res: Response, next: NextFunction) => {
     const query = {Data_Time:{$regex:"[0-9]*"}}
     return Camera_IMG.deleteMany(query).then(()=>res.status(201).json({message:"DeleteALL"})).catch((error)=>res.status(500).json({error}))
 } 
-export default {uploadIMG,readALLIMG,deleteALLIMG,readByDateAndID};
+
+export default {uploadIMG,readALLIMG,deleteALLIMG,readByDateAndID,readByID,deleteByDateAndID};
