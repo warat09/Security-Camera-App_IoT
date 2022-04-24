@@ -93,6 +93,7 @@ const setupCameraSensor = (req: Request, res: Response, next: NextFunction) =>
 const setupCameraReady = (req: Request, res: Response, next: NextFunction) =>
 {
     const data = req.body;
+    console.log(req.body)
     const want_update = {
       Camera_ID: req.params.Name,
     };
@@ -183,6 +184,91 @@ const resetCamera = (req: Request, res: Response, next: NextFunction) =>
     })
     return Camera.deleteMany(want_reset).then((IMG_DATA)=>(IMG_DATA ? res.status(201).json({IMG_DATA}):res.status(404).json({message:'Not found!!!'}))).catch((error)=>res.status(500).json({error}))
 }
+const onRealTime = (req: Request, res: Response, next: NextFunction) =>
+{
+    const want_data = {
+        Camera_ID: req.params.Name,
+    }
+    let Result:any;
+    Camera.findOne(want_data).then((Cam)=>{
+        MqttClient.sendMessage(Cam!.Camera_MQTT, "CameraRealtimeOn");
+        Result = Cam;
+    })
+    return setTimeout(()=>
+    {
+        if(Result!=null)
+        {
+            res.status(200).json({ Result });
+        }
+        else
+        {
+            res.status(404).json({message:"Not found!!"});
+        }
+    },2000);
+}
+const offRealTime = (req: Request, res: Response, next: NextFunction) =>
+{
+    const want_data = {
+        Camera_ID: req.params.Name,
+    }
+    let Result:any;
+    Camera.findOne(want_data).then((Cam) => {
+        MqttClient.sendMessage(Cam!.Camera_MQTT, "CameraRealtimeOff");
+        Result = Cam;
+    });
+    return setTimeout(()=>
+    {
+        if(Result!=null)
+        {
+            res.status(200).json({ Result });
+        }
+        else
+        {
+            res.status(404).json({message:"Not found!!"});
+        }
+    },2000);
+}
+const onSensor = (req: Request, res: Response, next: NextFunction) =>
+{
+    const want_data = {
+        Camera_ID: req.params.Name,
+    };
+    let Result:any;
+    Camera.findOne(want_data).then((Cam) => {
+        MqttClient.sendMessage(Cam!.Camera_MQTT, "OnSensor");
+        Result = Cam;
+    });
+    return setTimeout(()=>
+    {
+        console.log(Result)
+        if(Result!=null)
+        {
+            res.status(200).json({ Result });
+        }
+        else
+        {
+            res.status(404).json({message:"Not found!!"});
+        }
+    },2000);
+}
+const offSensor = (req: Request, res: Response, next: NextFunction) => 
+{
+    const want_data = {
+        Camera_ID: req.params.Name,
+    };
+    let Result: any;
+        Camera.findOne(want_data).then((Cam) => {
+        MqttClient.sendMessage(Cam!.Camera_MQTT, "OffSensor");
+        Result = Cam;
+    });
+    return setTimeout(() => {
+        if (Result != null) {
+        res.status(200).json({ Result });
+        } else {
+        res.status(404).json({ message: "Not found!!" });
+        }
+    }, 2000);
+};
 export default {
   setupCameraSensor,
   setupCamera,
@@ -193,4 +279,8 @@ export default {
   readCameraDataByOwner,
   setupName,
   resetCameraStatus,
+  onRealTime,
+  offRealTime,
+  onSensor,
+  offSensor,
 };

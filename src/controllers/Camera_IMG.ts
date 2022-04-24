@@ -1,8 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import Camera_IMG from "../models/Camara_IMG";
+import admin from "firebase-admin"
+import Camera from "../models/Camera";
+import { Message } from "firebase-admin/lib/messaging/messaging-api";
+const serviceAccount = require("../Firebase_Service/iot-project-7d920-firebase-adminsdk-vlya4-26a5359c01.json")
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL:
+        "https://iot-project-7d920-default-rtdb.asia-southeast1.firebasedatabase.app",
+});
+
 const uploadIMG = (req: Request, res: Response, next: NextFunction) => {
-    const img:Array<String> = req.body.img; 
+    const img:Array<String> =req.body.img; 
     const cameraname:String = req.params.Name;
     const ALL_date = new Date();
     let date = ("0" + ALL_date.getDate()).slice(-2);
@@ -17,7 +27,20 @@ const uploadIMG = (req: Request, res: Response, next: NextFunction) => {
             Camera_ID:cameraname,
             Img:img
         });
-
+    const want_data = {
+        Camera_ID:req.params.Name
+    }
+    Camera.findOne(want_data).then((result)=>{
+        let message:any= {
+            notification:{
+                title : result?.Camera_Name,
+                body : "วันที่ : " + date + "/" + month + "/" + year + "\nเวลา : "+ hours + ":" + minutes + ":" + seconds
+            },
+            topic: `${result?.Camera_Owner.toString()}`
+        }
+        console.log(result?.Camera_Owner)
+        admin.messaging().send(message).then((res)=>console.log(res))
+    })
     return camera_ID.save().then((IMG)=>res.status(201).json({IMG})).catch((error)=>res.status(500).json({error}))
 };
 const readByID = (req: Request, res: Response, next: NextFunction) => {
