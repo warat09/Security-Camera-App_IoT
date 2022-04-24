@@ -16,4 +16,6 @@ router.get(
 router.get("/resetpassword/:token", controller.tokensendemail);
 router.post("/resetpassword/:token", controller.keepresetpassword);
 
+router.get("/verifyemail/:token", controller.tokenregisemail);
+
 export default router;

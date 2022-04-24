@@ -8,6 +8,21 @@ import { any } from "joi";
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 
+const CLIENT_ID =
+  "901872679791-l5ssb10p617vt6mo4q2b3u61dgn4tt2u.apps.googleusercontent.com";
+const CLIENT_SECRET = "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";
+const REDIRECT_URI = "https://developers.google.com/oauthplayground";
+const REFRESH_TOKEN =
+  "1//04zNGhLAs-v8TCgYIARAAGAQSNwF-L9IrFX06Q5U84zMDsJS96vmstZePoN1JU3lsggqqBP5k5XHJyRXCnRARjqlPU32bXoNPMWw";
+
+const oAuth2Client = new google.auth.OAuth2(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI,
+  REFRESH_TOKEN
+);
+oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
 const Register = (req: Request, res: Response, next: NextFunction) => {
   const Name: string = req.body.User_Name;
   const Phone: string = req.body.User_Phone;
@@ -22,21 +37,136 @@ const Register = (req: Request, res: Response, next: NextFunction) => {
       User_Password: Password,
     });
     console.log(Regisuser);
-    const token = jwt.sign(
-      { User_id: Email, Name },
-      config.Token.TOKEN_SECRET,
-      { expiresIn: "30d" }
-    );
-    console.log(token);
+    // const token = jwt.sign({}, config.Token.TOKEN_SECRET, {
+    //   expiresIn: "30d",
+    // });
+    // console.log(token);
     return User.find({ User_Name: Name })
       .count(function (err, number) {
         if (number == 0) {
           console.log("notfoundcheckuser");
-          User.findOne({ User_Email: Email }).count(function (err, Number) {
+          User.findOne({ User_Email: Email }).count(async function (
+            err,
+            Number
+          ) {
             if (Number == 0) {
-              Regisuser.save()
-                .then((Newuser) => res.status(201).json({ Token: token }))
-                .catch((error) => res.status(500).json({ error }));
+              const sendtoken = jwt.sign(
+                {
+                  User_Name: Name,
+                  User_Phone: Phone,
+                  User_Email: Email,
+                  User_Password: Password,
+                },
+                config.Token.TOKEN_SECRET,
+                {
+                  expiresIn: "5m",
+                }
+              );
+              try {
+                const accessToken = await oAuth2Client.getAccessToken();
+                const transport = nodemailer.createTransport({
+                  service: "gmail",
+                  auth: {
+                    type: "OAuth2",
+                    user: "beebacorporation@gmail.com",
+                    clientId: CLIENT_ID,
+                    clientSecret: CLIENT_SECRET,
+                    refreshToken: REFRESH_TOKEN,
+                    accessToken: accessToken,
+                  },
+                });
+                const mailOptions = {
+                  from: "beebacorporation <beebacorporation@gmail.com>",
+                  to: Email,
+                  subject: "มีการสมัครสมาชิกผ่านอีเมลของคุณ",
+                  html: `
+			<html>
+    <head>
+        <title>Reset Password</title>
+        <meta charset="UTF-8">
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>Reset Password Email Template</title>
+    <meta name="description" content="Reset Password Email Template.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style type="text/css">
+        a:hover {text-decoration: underline !important;}
+        *{
+font-family: "Kanit", sans-serif;
+        }
+    </style>
+    </head>
+<body marginheight="0" topmargin="0" marginwidth="0" style="margin: 0px; background-color: #f2f3f8;" leftmargin="0">
+
+
+
+
+    <!--100% body table-->
+    <table cellspacing="0" border="0" cellpadding="0" width="100%" bgcolor="#f2f3f8"
+        style="@import url(https://fonts.googleapis.com/css?family=Rubik:300,400,500,700|Open+Sans:300,400,600,700); font-family: "Open Sans", sans-serif;">
+        <tr>
+            <td>
+                <table style="background-color: #f2f3f8; max-width:670px;  margin:0 auto;" width="100%" border="0"
+                    align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">
+                          <a href="" title="logo" target="_blank">
+                            <img width="160" src="https://cdn.discordapp.com/attachments/764897423666446366/967500127558316092/unknown.png" title="logo" alt="logo">
+                          </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
+                                style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0 35px;">
+                                        <h1 style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:"Rubik",sans-serif;">
+                                            สมัครสมาชิก
+                                            </h1>
+                                        <span
+                                            style="display:inline-block; vertical-align:middle; margin:29px 0 26px; border-bottom:1px solid #cecece; width:100px;"></span>
+                                        <p style="color:#455056; font-size:15px;line-height:24px; margin:0;">
+                                            มีการสมัครสมาชิกผ่านอีเมลของคุณกรุณากดปุ่มเพื่อยืนยัน
+                                        </p>
+                                        <a href="http://localhost:9090/User/verifyemail/${sendtoken}" style="border:none;cursor:pointer;background:#FF9190;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:20px;padding:10px 24px;display:inline-block;border-radius:50px;text-align:center;">ยืนยัน</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>`,
+                };
+                await transport.sendMail(mailOptions).then(
+                  res.json({
+                    message: "Email is sent please check you Email",
+                  })
+                );
+              } catch (error) {
+                res.json({ message: `${error}` });
+              }
             } else {
               res.status(500).json({ message: "Email already exists" });
             }
@@ -45,11 +175,125 @@ const Register = (req: Request, res: Response, next: NextFunction) => {
           res.status(500).json({ message: "Username already exists" });
         } else {
           User.findOne({ User_Email: Email })
-            .count(function (err, num) {
+            .count(async function (err, num) {
               if (num == 0) {
-                Regisuser.save()
-                  .then((Newuser) => res.status(201).json({ Token: token }))
-                  .catch((error) => res.status(500).json({ error }));
+                const sendtoken = jwt.sign(
+                  {
+                    User_Name: Name,
+                    User_Phone: Phone,
+                    User_Email: Email,
+                    User_Password: Password,
+                  },
+                  config.Token.TOKEN_SECRET,
+                  {
+                    expiresIn: "5m",
+                  }
+                );
+                try {
+                  const accessToken = await oAuth2Client.getAccessToken();
+                  const transport = nodemailer.createTransport({
+                    service: "gmail",
+                    auth: {
+                      type: "OAuth2",
+                      user: "beebacorporation@gmail.com",
+                      clientId: CLIENT_ID,
+                      clientSecret: CLIENT_SECRET,
+                      refreshToken: REFRESH_TOKEN,
+                      accessToken: accessToken,
+                    },
+                  });
+                  const mailOptions = {
+                    from: "beebacorporation <beebacorporation@gmail.com>",
+                    to: Email,
+                    subject: "มีการสมัครสมาชิกผ่านอีเมลของคุณ",
+                    html: `
+			<html>
+    <head>
+        <title>Reset Password</title>
+        <meta charset="UTF-8">
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>Reset Password Email Template</title>
+    <meta name="description" content="Reset Password Email Template.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style type="text/css">
+        a:hover {text-decoration: underline !important;}
+        *{
+font-family: "Kanit", sans-serif;
+        }
+    </style>
+    </head>
+<body marginheight="0" topmargin="0" marginwidth="0" style="margin: 0px; background-color: #f2f3f8;" leftmargin="0">
+
+
+
+
+    <!--100% body table-->
+    <table cellspacing="0" border="0" cellpadding="0" width="100%" bgcolor="#f2f3f8"
+        style="@import url(https://fonts.googleapis.com/css?family=Rubik:300,400,500,700|Open+Sans:300,400,600,700); font-family: "Open Sans", sans-serif;">
+        <tr>
+            <td>
+                <table style="background-color: #f2f3f8; max-width:670px;  margin:0 auto;" width="100%" border="0"
+                    align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">
+                          <a href="" title="logo" target="_blank">
+                            <img width="160" src="https://cdn.discordapp.com/attachments/764897423666446366/967500127558316092/unknown.png" title="logo" alt="logo">
+                          </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
+                                style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0 35px;">
+                                        <h1 style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:"Rubik",sans-serif;">
+                                            สมัครสมาชิก
+                                            </h1>
+                                        <span
+                                            style="display:inline-block; vertical-align:middle; margin:29px 0 26px; border-bottom:1px solid #cecece; width:100px;"></span>
+                                        <p style="color:#455056; font-size:15px;line-height:24px; margin:0;">
+                                            มีการสมัครสมาชิกผ่านอีเมลของคุณกรุณากดปุ่มเพื่อยืนยัน
+                                        </p>
+                                        <a href="http://localhost:9090/User/verifyemail/${sendtoken}" style="border:none;cursor:pointer;background:#FF9190;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:20px;padding:10px 24px;display:inline-block;border-radius:50px;text-align:center;">ยืนยัน</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>`,
+                  };
+                  await transport.sendMail(mailOptions).then(
+                    res.json({
+                      message: "Email is sent please check you Email",
+                    })
+                  );
+                } catch (error) {
+                  res.json({ message: `${error}` });
+                }
               } else {
                 res.status(500).json({ message: "Email already exists" });
               }
@@ -68,11 +312,11 @@ const Login = (req: Request, res: Response, next: NextFunction) => {
       res.json({ message: "Email Wrong!!" });
     } else {
       console.log("found");
-      User.findOne({ User_Password: bcrypt.hash(Password, 10) }).count(
-        function (err, num) {
-          if (num == 0) {
-            res.json({ message: "Password not corrct" });
-          } else {
+      User.findOne({ User_Email: Email }).then((user) => {
+        console.log(user?.User_Password);
+        bcrypt.hash(Password, 10).then((Ps) => console.log(Ps));
+        bcrypt.compare(Password, user!.User_Password).then((result) => {
+          if (result) {
             const token = jwt.sign(
               { User_id: Email },
               config.Token.TOKEN_SECRET,
@@ -80,27 +324,15 @@ const Login = (req: Request, res: Response, next: NextFunction) => {
             );
             console.log(token);
             res.json({ message: "Login Success!!", Token: token });
+          } else {
+            res.json({ message: "Password not corrct" });
           }
-        }
-      );
+        });
+      });
     }
   });
 };
 const forgetpassword = (req: Request, res: Response, next: NextFunction) => {
-  const CLIENT_ID =
-    "901872679791-l5ssb10p617vt6mo4q2b3u61dgn4tt2u.apps.googleusercontent.com";
-  const CLIENT_SECRET = "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";
-  const REDIRECT_URI = "https://developers.google.com/oauthplayground";
-  const REFRESH_TOKEN =
-    "1//04zNGhLAs-v8TCgYIARAAGAQSNwF-L9IrFX06Q5U84zMDsJS96vmstZePoN1JU3lsggqqBP5k5XHJyRXCnRARjqlPU32bXoNPMWw";
-
-  const oAuth2Client = new google.auth.OAuth2(
-    CLIENT_ID,
-    CLIENT_SECRET,
-    REDIRECT_URI,
-    REFRESH_TOKEN
-  );
-  oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
   console.log(req.body.User_Email);
   const Email: string = req.body.User_Email;
   return User.findOne({ User_Email: Email }).count(async function (err, num) {
@@ -233,6 +465,38 @@ const getUserDataByEmail = (
     .then((user) => res.status(200).json({ user }))
     .catch((error) => res.status(500).json({ error }));
 };
+const tokenregisemail = (req: Request, res: Response, next: NextFunction) => {
+  jwt.verify(
+    req.params.token,
+    config.Token.TOKEN_SECRET,
+    async (err: any, user: any) => {
+      if (err) {
+        console.log("tokeneex");
+        res.render("verifytimeout", { error: "ลิ้งค์นี้หมดอายุแล้ว" });
+      } else {
+        User.findOne({ User_Email: user.User_Email }).count(async function (
+          err,
+          num
+        ) {
+          if (num == 0) {
+            const Regisuser = new User({
+              User_Name: user.User_Name,
+              User_Phone: user.User_Phone,
+              User_Email: user.User_Email,
+              User_Password: user.User_Password,
+            });
+
+            await Regisuser.save();
+            res.render("verifysuccess");
+          } else {
+            res.render("verifytimeout", { error: "อีเมลนี้สมัครสมาชิกแล้ว" });
+          }
+        });
+      }
+    }
+  );
+};
+
 const tokensendemail = (req: Request, res: Response, next: NextFunction) => {
   jwt.verify(
     req.params.token,
@@ -269,7 +533,7 @@ const keepresetpassword = (req: Request, res: Response, next: NextFunction) => {
       User.findOne(findUser).then((user) => {
         user!.set(encriptpassword);
         user?.save().then(() => {
-          res.render("success", { error: "รีเซตรหัสผ่านแล้ว!!" });
+          res.render("success", { success: "รีเซตรหัสผ่านแล้ว!!" });
         });
       });
     });
@@ -283,6 +547,7 @@ export default {
   readUser,
   getUserDataByEmail,
   forgetpassword,
+  tokenregisemail,
   tokensendemail,
   keepresetpassword,
 };
