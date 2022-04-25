@@ -1,4 +1,4 @@
-import { NextFunction, Request, response, Response } from "express";
+import { json, NextFunction, Request, response, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -85,7 +85,7 @@ const Register = (req: Request, res: Response, next: NextFunction) => {
         <title>Reset Password</title>
         <meta charset="UTF-8">
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title>Reset Password Email Template</title>
+    <title>Register Email</title>
     <meta name="description" content="Reset Password Email Template.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,7 +212,7 @@ font-family: "Kanit", sans-serif;
         <title>Reset Password</title>
         <meta charset="UTF-8">
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title>Reset Password Email Template</title>
+    <title>Reset Password Email</title>
     <meta name="description" content="Reset Password Email Template.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -541,6 +541,9 @@ const keepresetpassword = (req: Request, res: Response, next: NextFunction) => {
     return res.render("resetpassword", { error: "ใส่รหัสผ่านไม่ตรงกัน!!" });
   }
 };
+const verification = (req: Request, res: Response, next: NextFunction) => {
+  return res.status(200).json({ message: "Token Pass!!!" });
+};
 export default {
   Register,
   Login,
@@ -550,4 +553,5 @@ export default {
   tokenregisemail,
   tokensendemail,
   keepresetpassword,
+  verification,
 };

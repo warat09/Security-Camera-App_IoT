@@ -36,9 +36,8 @@ const uploadIMG = (req: Request, res: Response, next: NextFunction) => {
                 title : result?.Camera_Name,
                 body : "วันที่ : " + date + "/" + month + "/" + year + "\nเวลา : "+ hours + ":" + minutes + ":" + seconds
             },
-            topic: `${result?.Camera_Owner.toString()}`
+            topic: `${result!.Camera_Owner}`
         }
-        console.log(result?.Camera_Owner)
         admin.messaging().send(message).then((res)=>console.log(res))
     })
     return camera_ID.save().then((IMG)=>res.status(201).json({IMG})).catch((error)=>res.status(500).json({error}))
